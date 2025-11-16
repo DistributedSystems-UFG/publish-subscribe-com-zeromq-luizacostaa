@@ -101,6 +101,7 @@ class Client:
       elif opcao == "4":
         self.safe_call(self.conn.root.exposed_clear)
         print("Lista limpa.")
+        
 
       elif opcao == "5":
         print("\nVetor atual:")
@@ -108,8 +109,13 @@ class Client:
         print(lista_atual)
 
         if not lista_atual:  #  lista vazia
-            print("❌ O vetor está vazio. Nada para ordenar. Voltando ao menu...\n")
-            continue
+          print("❌ O vetor está vazio. Nada para ordenar. Voltando ao menu...\n")
+          continue
+
+        # chamar o servidor para ordenar
+        lista_ordenada = self.safe_call(self.conn.root.exposed_sort)
+        print("\nVetor ordenado:")
+        print(lista_ordenada)
 
 
       elif opcao == "6":
