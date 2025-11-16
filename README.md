@@ -1,37 +1,55 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/mrIsNMKU)
-# Pub-Sub-Basics-with-ZeroMQ
+# Tarefa 10 de publish subscribe
 
-This is a very simple pub-sub app implemented with ZeroMQ. Use it as an example for the pub-sub assignment (topic-based chat system).
+## Como usr
+-Tenha python3 atualizado
 
-### First, install ZeroMQ (on each machine):
+1 - Iniciar servidor
+```bash
+    python server.py
+```
 
-    sudo apt update
+2 - Iniciar cliente
+```bash
+    python client.py
+```
 
-    sudo apt install python3-zmq
+3 - Iniciar subscriber
+```bash
+    python subscriber.py
+```
+Ao iniciar, o subscriber pergunta qual tópico você deseja assinar. É possível assinar:
+SHOW, INSERT, APPEND, REMOVE, SORT, CLEAR
 
-### Or, with virtual environments (also on each machine -- only install pip3 and venv if not yet installed):
+Também é possível assinar todos os tópicos deixando o campo vazio e apertando ENTER
 
-    sudo apt update
-    sudo apt install python3-pip
-    sudo apt install python3-venv
-    python3 -m venv myvenv
-    source myvenv/bin/activate
-    pip3 install pyzmq
 
-### Next, configure the IP address and port number of the publisher's machine in the constPS.py file
 
-Note: Make sure that this repo is cloned in all the machines used for this experiment.
+## Observações sobre o desenvolvimento
 
-### Then, run the publisher and subscriber:
+Acabei aproveitando a atividade 8 que usava RPC. Na atividade 8 era possível adicionar, atualizar, limpar, ordenar e fazer várias outras coisas com um vetor. O publish subscribe entra com a ideia de que cada uma das funções: "SHOW", "INSERT", "APPEND", "REMOVE", "SORT" e "CLEAR" serão um tópico. 
+Adaptei os códigos e agora toda vez que o vetor sofrer alguma alteração ou ser apenas visualizado, o publisher vai ser notificado.
 
-On the machine for which the IP address was configured:
+### ATenção: o publisher foi colocado dentro do server.py
+- Quando o servidor é iniciado, ele cria um socket do tipo PUB (publisher) e o associa à classe DBList
+```bash
+    context = zmq.Context()
+    publisher = context.socket(zmq.PUB)
+    publisher.bind("tcp://0.0.0.0:6000")
+    DBList.publisher = publisher
+```
+-Todas as operações que modificam ou consultam a lista (append, insert, remove, show, sort, clear) chamam o método publish da própria classe
+```bash
+    def publish(self, topic, msg):
+    if DBList.publisher:
+        DBList.publisher.send_string(f"{topic} {msg}")
+```    
 
-    python3 publisher.py
+### Estrutura do Projeto
 
-On another machine:
+- server.py – Servidor RPC que gerencia a lista e publica eventos
 
-    python3 subscriber.py
+- client.py – Cliente RPC que permite manipular a lista
 
-### Now, add other topics for in the publisher and create subscribers for the new topics.
+- subscriber.py – Cliente para receber notificações em tempo real
 
-    
+- constRPYC.py – Constantes de configuração (SERVER, PORT)
