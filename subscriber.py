@@ -1,52 +1,59 @@
 import zmq
 import sys
 from datetime import datetime
+from colorama import init, Fore, Style
 
-# === Cores ANSI ===
-RESET = "\033[0m"
-BOLD = "\033[1m"
+# Inicializa colorama
+init(autoreset=True)
 
-# Cores
-GREEN = "\033[32m"
-CYAN = "\033[36m"
-YELLOW = "\033[33m"
-GRAY = "\033[90m"
+# Cores para tópicos diferentes
+TOPIC_COLORS = {
+    "SHOW": Fore.CYAN,
+    "INSERT": Fore.GREEN,
+    "APPEND": Fore.MAGENTA,
+    "REMOVE": Fore.RED,
+    "SORT": Fore.YELLOW,
+    "CLEAR": Fore.BLUE
+}
 
 def main():
     context = zmq.Context()
     s = context.socket(zmq.SUB)
     s.connect("tcp://127.0.0.1:6000")
 
-    # Se nenhum tópico for passado, assina todos
-    if len(sys.argv) > 1:
-        topic = sys.argv[1]
-        print(f"{GRAY}Assinando apenas o tópico:{RESET} {GREEN}{topic}{RESET}")
-        s.setsockopt_string(zmq.SUBSCRIBE, topic)
-    else:
-        print(f"{GRAY}Assinando TODOS os tópicos.{RESET}")
-        s.setsockopt_string(zmq.SUBSCRIBE, "")
+    # Mensagem de boas-vindas
+    print("Bem-vindo(a) à nossa revista digital do vetor!")
+    print("Fique por dentro de tudo o que acontece com o vetor v.")
+    print("Se alguém consultá-lo, modificá-lo ou ordená-lo, você vai saber! Escolha quais tópicos te interessam.\n")
 
-    print(f"{GRAY}Subscriber iniciado. Aguardando mensagens...{RESET}\n")
+    # Perguntar qual tópico(s) assinar
+    print("Tópicos disponíveis:", ", ".join(TOPIC_COLORS.keys()))
+    selected_topics = input("Digite os tópicos que deseja assinar, separados por vírgula (ou ENTER para todos): ").strip()
+
+    if selected_topics:
+        topics = [t.strip().upper() for t in selected_topics.split(",")]
+        for t in topics:
+            s.setsockopt_string(zmq.SUBSCRIBE, t)
+        print(f"Assinando os tópicos: {', '.join(topics)}")
+    else:
+        s.setsockopt_string(zmq.SUBSCRIBE, "")
+        print("Assinando TODOS os tópicos.")
+
+    print("\nSubscriber iniciado. Aguardando mensagens...\n")
 
     try:
         while True:
             msg = s.recv_string()
-            
             # separar o tópico da mensagem
             parts = msg.split(" ", 1)
             topic = parts[0]
             conteudo = parts[1] if len(parts) > 1 else "(sem conteúdo)"
-
             hora = datetime.now().strftime("%H:%M:%S")
-
-            print(
-                f"{YELLOW}[{hora}]{RESET} "
-                f"{GREEN}[{topic}]{RESET} "
-                f"{CYAN}{conteudo}{RESET}"
-            )
+            color = TOPIC_COLORS.get(topic, Fore.WHITE)
+            print(f"{color}[{hora}] [{topic}] {conteudo}{Style.RESET_ALL}")
 
     except KeyboardInterrupt:
-        print(f"\n{GRAY}Encerrando subscriber...{RESET}")
+        print("\nEncerrando subscriber...")
     finally:
         s.close()
         context.term()
